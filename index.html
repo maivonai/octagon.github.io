@@ -3,203 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Octagon – Liquid Glass</title>
+    <title>Octagon</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --glass-bg: rgba(20, 15, 50, 0.35);
-            --glass-border: rgba(120, 100, 255, 0.22);
-            --accent: #a78bfa;
-            --accent-dark: #7c3aed;
-            --text: #e0e0ff;
-            --blur: blur(20px) saturate(190%);
-            --bg-gradient: linear-gradient(135deg, #1e0f3f, #0d142e, #1a0f3e);
+            --bg: #ffffff;
+            --accent: #3b82f6;          /* синий основной */
+            --accent-light: #60a5fa;
+            --text: #111827;
+            --text-light: #6b7280;
+            --glass: rgba(255,255,255,0.85);
+            --border: #e5e7eb;
+            --radius-pill: 9999px;
+            --radius-large: 32px;
         }
         body {
             margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: var(--bg-gradient);
-            background-size: 400% 400%;
-            animation: flow 24s ease infinite;
-            color: var(--text);
             font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-        }
-        @keyframes flow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         header {
-            width: 100%;
-            padding: 16px 0;
-            text-align: center;
-            backdrop-filter: var(--blur);
-            background: var(--glass-bg);
-            border-bottom: 1px solid var(--glass-border);
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 100;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
+        .logo {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15);
+        }
+        .logo img { width: 100%; height: 100%; object-fit: cover; }
         h1 {
             margin: 0;
-            font-size: 2.4em;
-            font-weight: 800;
+            font-size: 1.55em;
+            font-weight: 700;
             color: var(--accent);
-            text-shadow: 0 0 16px rgba(167, 139, 250, 0.7);
         }
-        #balance {
-            font-size: 1.4em;
-            margin: 8px 0 4px;
-            color: #d1c4ff;
-            text-shadow: 0 0 10px rgba(209, 196, 255, 0.5);
+        .main {
+            flex: 1;
+            padding: 24px 16px;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
         }
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: var(--blur);
-            border: 1px solid var(--glass-border);
-            border-radius: 28px;
+        .card {
+            background: white;
+            border-radius: var(--radius-large);
+            border: 1px solid var(--border);
             padding: 28px 20px;
-            margin: 24px 16px;
-            width: calc(100% - 32px);
-            max-width: 440px;
-            box-shadow: inset 0 3px 12px rgba(255,255,255,0.08),
-                        0 12px 40px rgba(0,0,0,0.45);
-            transition: transform 0.35s ease;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            transition: all 0.28s ease;
         }
-        .glass-card:hover {
-            transform: translateY(-6px);
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(59,130,246,0.12);
         }
         button {
             width: 100%;
-            padding: 18px;
-            font-size: 1.4em;
-            font-weight: 700;
+            padding: 16px;
+            font-size: 1.18em;
+            font-weight: 600;
             border: none;
-            border-radius: 20px;
+            border-radius: var(--radius-pill);
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 16px 0;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            transition: all 0.25s ease;
+            margin: 12px 0;
         }
         #connectBtn {
-            background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+            background: var(--accent);
             color: white;
         }
-        #connectBtn:disabled { background: #3a3a4a; cursor: not-allowed; }
+        #connectBtn:hover { background: #2563eb; transform: scale(1.02); }
+        #connectBtn:disabled { background: #d1d5db; cursor: not-allowed; }
         #disconnectBtn {
-            background: linear-gradient(45deg, #ef4444, #dc2626);
+            background: #ef4444;
             color: white;
         }
-        #disconnectBtn:disabled { background: #3a3a4a; cursor: not-allowed; }
+        #disconnectBtn:hover { background: #dc2626; transform: scale(1.02); }
+        #disconnectBtn:disabled { background: #d1d5db; cursor: not-allowed; }
         #sendBtn {
-            background: linear-gradient(45deg, #10b981, #059669);
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
             color: white;
-            font-size: 1.55em;
-            padding: 22px;
+            font-size: 1.32em;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.25);
         }
-        #sendBtn:disabled { background: #3a3a4a; cursor: not-allowed; }
+        #sendBtn:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(59,130,246,0.35); }
+        #sendBtn:disabled { background: #d1d5db; cursor: not-allowed; box-shadow: none; }
         input[type="number"] {
             width: 100%;
             padding: 16px;
-            font-size: 1.5em;
-            border-radius: 16px;
-            border: 1px solid var(--glass-border);
-            background: rgba(30, 25, 70, 0.5);
-            color: white;
+            font-size: 1.4em;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
             text-align: center;
             margin: 16px 0;
+            background: #f9fafb;
         }
         .presets {
             display: flex;
-            justify-content: space-around;
-            gap: 12px;
+            gap: 10px;
+            justify-content: center;
             flex-wrap: wrap;
-            margin: 12px 0;
+            margin: 16px 0;
         }
         .presets button {
-            background: rgba(120, 100, 255, 0.4);
-            color: white;
-            padding: 12px 24px;
-            font-size: 1.1em;
-            border-radius: 16px;
-            border: none;
-            cursor: pointer;
+            padding: 10px 20px;
+            font-size: 1em;
+            background: #eff6ff;
+            color: var(--accent);
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius-pill);
+        }
+        .presets button:hover {
+            background: #dbeafe;
+            transform: scale(1.05);
         }
         #status {
-            margin: 24px 20px;
-            font-size: 1.25em;
-            color: #fde047;
             text-align: center;
-            min-height: 80px;
-            line-height: 1.4;
+            margin: 20px 0;
+            font-size: 1.15em;
+            color: var(--text-light);
+            min-height: 60px;
         }
         #userInfo {
-            font-size: 1.3em;
+            font-size: 1.25em;
             margin-bottom: 20px;
             text-align: center;
-            color: #c4b5fd;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            height: 68px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-size: 0.82em;
+            transition: color 0.2s;
+        }
+        .nav-item.active {
+            color: var(--accent);
+        }
+        .nav-item svg, .nav-item img {
+            width: 28px;
+            height: 28px;
+            margin-bottom: 4px;
+        }
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-light);
+        }
+
+        @media (hover: hover) {
+            .card:hover, button:hover { transition: all 0.28s ease; }
         }
     </style>
 </head>
 <body>
     <header>
+        <div class="logo">
+            <img src="https://thumbs.dreamstime.com/b/geometric-blue-core-octagon-symbol-clean-modern-vector-illustration-featuring-abstract-octagonal-shape-enclosing-422840365.jpg" alt="Octagon Logo">
+        </div>
         <h1>Octagon</h1>
-        <div id="balance">Отправлено TON: 0.00</div>
     </header>
 
-    <div class="glass-card">
-        <div id="userInfo">Загрузка...</div>
+    <div class="main" id="mainContent">
+        <div class="card">
+            <div id="userInfo">Загрузка...</div>
 
-        <div class="controls">
             <button id="connectBtn">Подключить кошелёк</button>
-            <button id="disconnectBtn" disabled>Отключить</button>
+            <button id="disconnectBtn" disabled>Отключить кошелёк</button>
+
+            <p style="text-align:center; margin:20px 0 8px; color:var(--text-light);">Сумма в TON</p>
+            <input type="number" id="amount" value="0.1" min="0.001" step="0.001">
+
+            <div class="presets">
+                <button onclick="setAmount(0.01)">0.01</button>
+                <button onclick="setAmount(0.05)">0.05</button>
+                <button onclick="setAmount(0.1)">0.1</button>
+                <button onclick="setAmount(0.5)">0.5</button>
+            </div>
+
+            <button id="sendBtn" disabled>Отправить TON</button>
         </div>
 
-        <p style="text-align:center; margin:20px 0 8px; color:#c4b5fd;">Сумма в TON</p>
-        <input type="number" id="amount" value="0.1" min="0.001" step="0.001">
-
-        <div class="presets">
-            <button onclick="setAmount(0.01)">0.01</button>
-            <button onclick="setAmount(0.05)">0.05</button>
-            <button onclick="setAmount(0.1)">0.1</button>
-            <button onclick="setAmount(0.5)">0.5</button>
-        </div>
-
-        <button id="sendBtn" disabled>Отправить</button>
+        <div id="status">Подключи кошелёк чтобы продолжить</div>
     </div>
 
-    <div id="status">Подключи кошелёк, чтобы отправить TON</div>
+    <!-- Профиль вкладка (скрыта по умолчанию) -->
+    <div class="main" id="profileContent" style="display:none; padding-top:16px;">
+        <div class="card" style="text-align:center;">
+            <img id="profileAvatar" class="profile-avatar" src="" alt="Аватар" style="margin:0 auto 12px; display:block;">
+            <div id="profileName" style="font-size:1.4em; font-weight:600; margin-bottom:8px;"></div>
+            <div style="color:var(--text-light); margin-bottom:20px;">Отправлено в Octagon</div>
+            <div id="profileSpent" style="font-size:2.2em; font-weight:700; color:var(--accent);"></div>
+            <div style="color:var(--text-light); font-size:1.1em;">TON</div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="navHome">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+            Главная
+        </div>
+        <div class="nav-item" id="navProfile">
+            <img id="navAvatar" src="" alt="Аватар" style="border-radius:50%; object-fit:cover;">
+            Профиль
+        </div>
+    </div>
 
     <script>
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
 
-        const user = Telegram.WebApp.initDataUnsafe.user;
-        document.getElementById('userInfo').innerText = user ? `Привет, ${user.first_name}!` : 'Пользователь не найден';
+        const user = Telegram.WebApp.initDataUnsafe.user || {};
+        const userId = user.id || 'anonymous';
+        const balanceKey = `ton_sent_${userId}`;
+        let balance = parseFloat(localStorage.getItem(balanceKey)) || 0;
 
         const RECEIVER_ADDRESS = 'UQDLUQwxUttwdqd4VBOpqAAHwzPH_O7QTCVhCceKuDyh-DKI';
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json',
-            walletsListSource: 'https://raw.githubusercontent.com/ton-blockchain/wallets-list/main/wallets-v4.json',
-            twaReturnUrl: window.location.href.split('?')[0],
             preferredWallets: ['tonkeeper']
         });
 
-        const userId = user?.id || 'anonymous';
-        const balanceKey = `ton_sent_${userId}`;
-        let balance = parseFloat(localStorage.getItem(balanceKey)) || 0;
-        updateBalanceDisplay();
-
-        function updateBalanceDisplay() {
-            document.getElementById('balance').innerText = `Отправлено TON: ${balance.toFixed(4)}`;
+        // Обновление баланса
+        function updateBalance() {
+            document.getElementById('status').innerText = '';
+            document.getElementById('profileSpent').innerText = balance.toFixed(4);
         }
+        updateBalance();
 
+        // Профиль
+        function updateProfile() {
+            const name = user.first_name || 'Гость';
+            const photo = user.photo_url || 'https://via.placeholder.com/64?text=' + name[0];
+
+            document.getElementById('profileName').innerText = name;
+            document.getElementById('profileAvatar').src = photo;
+            document.getElementById('navAvatar').src = photo;
+
+            document.getElementById('userInfo').innerHTML = `Привет, ${name}!`;
+        }
+        updateProfile();
+
+        // Подключение
         tonConnectUI.onStatusChange(wallet => {
             const connected = !!wallet;
             document.getElementById('connectBtn').innerText = connected ? 'Подключено ✓' : 'Подключить кошелёк';
@@ -208,31 +290,23 @@
             document.getElementById('sendBtn').disabled = !connected;
 
             document.getElementById('status').innerText = connected 
-                ? 'Готово. Можно отправлять TON' 
-                : 'Подключи кошелёк для отправки';
+                ? 'Готово к отправке TON' 
+                : 'Подключи кошелёк';
         });
 
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            try {
-                await tonConnectUI.connectWallet();
-            } catch (err) {
-                document.getElementById('status').innerText = 'Ошибка подключения: ' + (err.message || 'неизвестно');
-            }
-        });
+        document.getElementById('connectBtn').onclick = async () => {
+            try { await tonConnectUI.connectWallet(); } catch(e) {}
+        };
 
-        document.getElementById('disconnectBtn').addEventListener('click', async () => {
-            try {
-                await tonConnectUI.disconnect();
-            } catch (err) {
-                document.getElementById('status').innerText = 'Ошибка отключения';
-            }
-        });
+        document.getElementById('disconnectBtn').onclick = async () => {
+            try { await tonConnectUI.disconnect(); } catch(e) {}
+        };
 
         function setAmount(val) {
             document.getElementById('amount').value = val;
         }
 
-        document.getElementById('sendBtn').addEventListener('click', async () => {
+        document.getElementById('sendBtn').onclick = async () => {
             const amt = parseFloat(document.getElementById('amount').value);
             if (isNaN(amt) || amt < 0.001) {
                 document.getElementById('status').innerText = 'Минимум 0.001 TON';
@@ -249,14 +323,43 @@
                 const res = await tonConnectUI.sendTransaction(tx);
                 balance += amt;
                 localStorage.setItem(balanceKey, balance);
-                updateBalanceDisplay();
-                document.getElementById('status').innerText = `Отправлено ${amt.toFixed(3)} TON\nХэш: ${res.boc.slice(0,12)}...`;
-            } catch (err) {
-                document.getElementById('status').innerText = 'Ошибка: ' + (err.message || 'отменено пользователем');
-            }
-        });
+                updateBalance();
 
-        setTimeout(() => tonConnectUI.restoreConnection().catch(() => {}), 1000);
+                // Конфетти
+                confetti({
+                    particleCount: 120,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#3b82f6', '#60a5fa', '#1e40af', '#93c5fd']
+                });
+
+                document.getElementById('status').innerText = `Отправлено ${amt.toFixed(3)} TON!`;
+            } catch (err) {
+                document.getElementById('status').innerText = 'Отправка отменена';
+            }
+        };
+
+        // Навигация
+        const homeBtn = document.getElementById('navHome');
+        const profileBtn = document.getElementById('navProfile');
+        const mainContent = document.getElementById('mainContent');
+        const profileContent = document.getElementById('profileContent');
+
+        homeBtn.onclick = () => {
+            homeBtn.classList.add('active');
+            profileBtn.classList.remove('active');
+            mainContent.style.display = 'block';
+            profileContent.style.display = 'none';
+        };
+
+        profileBtn.onclick = () => {
+            homeBtn.classList.remove('active');
+            profileBtn.classList.add('active');
+            mainContent.style.display = 'none';
+            profileContent.style.display = 'block';
+        };
+
+        setTimeout(() => tonConnectUI.restoreConnection().catch(() => {}), 800);
     </script>
 </body>
 </html>
