@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Octagon – Отправить TON</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Octagon – TON Connect Fix</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             color: white;
             margin: 0;
@@ -16,65 +16,69 @@
             text-align: center;
             min-height: 100vh;
         }
-        h1 { margin: 20px 0; font-size: 2em; }
-        #userInfo { font-size: 1.3em; margin-bottom: 30px; }
-        #connectTonBtn {
+        h1 { margin: 20px 0; font-size: 2.2em; }
+        #userInfo { font-size: 1.4em; margin: 20px 0; }
+        #connectBtn {
             background: #007bff;
             color: white;
-            padding: 15px 30px;
-            font-size: 1.2em;
             border: none;
+            padding: 16px 32px;
+            font-size: 1.3em;
             border-radius: 12px;
             cursor: pointer;
-            margin: 20px;
-        }
-        #connectTonBtn:disabled { background: #555; cursor: not-allowed; }
-        .amount-section {
             margin: 30px 0;
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
+            min-width: 240px;
+        }
+        #connectBtn:disabled { background: #555; cursor: not-allowed; }
+        .amount-box {
+            background: rgba(255,255,255,0.08);
             border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 380px;
         }
         input[type="number"] {
-            width: 180px;
+            width: 160px;
             padding: 12px;
-            font-size: 1.2em;
+            font-size: 1.4em;
             border-radius: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #4a5568;
             background: #1e293b;
             color: white;
             text-align: center;
         }
-        .preset-btns button {
+        .presets button {
             background: #334155;
             color: white;
-            padding: 10px 20px;
-            margin: 8px;
             border: none;
-            border-radius: 10px;
+            padding: 10px 18px;
+            margin: 8px 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 1em;
         }
-        #sendTonBtn {
+        #sendBtn {
             background: #00c853;
             color: white;
-            padding: 18px 40px;
-            font-size: 1.4em;
             border: none;
+            padding: 18px 40px;
+            font-size: 1.5em;
             border-radius: 50px;
             cursor: pointer;
-            margin-top: 30px;
-            box-shadow: 0 4px 15px rgba(0,200,83,0.4);
+            margin: 30px 0;
+            box-shadow: 0 6px 20px rgba(0,200,83,0.4);
         }
-        #sendTonBtn:disabled {
+        #sendBtn:disabled {
             background: #555;
             cursor: not-allowed;
             box-shadow: none;
         }
         #status {
-            margin-top: 30px;
             font-size: 1.2em;
-            min-height: 60px;
+            min-height: 80px;
+            margin: 20px 0;
             color: #ffeb3b;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -82,94 +86,113 @@
     <h1>Отправить TON</h1>
     <div id="userInfo">Загрузка...</div>
 
-    <button id="connectTonBtn">Подключить Tonkeeper / Wallet</button>
+    <button id="connectBtn">Подключить кошелёк</button>
 
-    <div class="amount-section">
-        <p>Сколько TON отправить:</p>
-        <input type="number" id="tonAmount" value="0.1" min="0.001" step="0.001" placeholder="0.1">
-        <div class="preset-btns">
-            <button onclick="setAmount(0.01)">0.01</button>
-            <button onclick="setAmount(0.05)">0.05</button>
-            <button onclick="setAmount(0.1)">0.1</button>
-            <button onclick="setAmount(0.5)">0.5</button>
+    <div class="amount-box">
+        <p>Сумма в TON:</p>
+        <input type="number" id="amount" value="0.1" min="0.001" step="0.001">
+        <div class="presets">
+            <button onclick="document.getElementById('amount').value=0.01">0.01</button>
+            <button onclick="document.getElementById('amount').value=0.05">0.05</button>
+            <button onclick="document.getElementById('amount').value=0.1">0.1</button>
+            <button onclick="document.getElementById('amount').value=0.5">0.5</button>
         </div>
     </div>
 
-    <button id="sendTonBtn" disabled>Отправить TON</button>
+    <button id="sendBtn" disabled>Отправить</button>
 
-    <div id="status">Сначала подключи кошелёк</div>
+    <div id="status">Ожидание подключения...</div>
 
     <script>
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-
-        // Показываем имя пользователя
-        const user = Telegram.WebApp.initDataUnsafe.user;
-        document.getElementById('userInfo').innerText = user 
-            ? `Привет, ${user.first_name || 'друг'}!` 
-            : 'Пользователь не найден';
-
-        // Твой TON-адрес (замени на реальный!)
-        const RECEIVER_ADDRESS = 'EQCd56VPexb2uPpoD0u25WPIi5vP1H4tnC4f8d7b1o2cT2cS'; // ← ВСТАВЬ СВОЙ АДРЕС ЗДЕСЬ
-
-        // Инициализация TON Connect
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json',
-            // Для лучшей совместимости с мобильными кошельками в Mini App
-            walletsListSource: 'https://raw.githubusercontent.com/ton-blockchain/wallets-list/main/wallets-v4.json'
-        });
-
-        // Статус подключения
-        tonConnectUI.onStatusChange(wallet => {
-            const connected = !!wallet;
-            document.getElementById('sendTonBtn').disabled = !connected;
-            document.getElementById('status').innerText = connected 
-                ? 'Кошелёк подключён! Выбери сумму и отправь.' 
-                : 'Кошелёк не подключён';
-        });
-
-        // Функция установки суммы пресетом
-        function setAmount(value) {
-            document.getElementById('tonAmount').value = value;
+        // Ждём полной готовности Telegram Web App
+        if (window.Telegram?.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
         }
 
-        // Кнопка отправки
-        document.getElementById('sendTonBtn').addEventListener('click', async () => {
-            const amountInput = document.getElementById('tonAmount').value;
-            const amountTon = parseFloat(amountInput);
+        const user = Telegram.WebApp.initDataUnsafe?.user;
+        document.getElementById('userInfo').innerText = user 
+            ? `Привет, ${user.first_name || 'друг'}!` 
+            : 'Пользователь не определён';
 
-            if (isNaN(amountTon) || amountTon <= 0) {
-                document.getElementById('status').innerText = 'Введите корректную сумму > 0';
+        // ТВОЙ TON-АДРЕС (обязательно замени!)
+        const RECEIVER = 'EQCd56VPexb2uPpoD0u25WPIi5vP1H4tnC4f8d7b1o2cT2cS'; // ← здесь твой EQ...
+
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json',
+            walletsListSource: 'https://raw.githubusercontent.com/ton-blockchain/wallets-list/main/wallets-v4.json',
+            // Важные настройки для Telegram Mini Apps
+            twaReturnUrl: window.location.href.split('?')[0],
+            // actionsConfiguration: { twaReturnUrl: window.location.href.split('?')[0] } // иногда нужно явно
+        });
+
+        // Обновление UI при изменении статуса подключения
+        tonConnectUI.onStatusChange(wallet => {
+            const connected = !!wallet;
+            document.getElementById('connectBtn').innerText = connected 
+                ? 'Кошелёк подключён ✓' 
+                : 'Подключить кошелёк';
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('sendBtn').disabled = !connected;
+            document.getElementById('status').innerText = connected 
+                ? 'Кошелёк готов. Выбери сумму и отправь.' 
+                : 'Нажми "Подключить кошелёк"';
+        });
+
+        // Клик на подключение (явный restore + connect)
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            try {
+                document.getElementById('status').innerText = 'Попытка подключения...';
+                if (tonConnectUI.connected) {
+                    await tonConnectUI.disconnect();
+                }
+                await tonConnectUI.connectWallet();
+            } catch (err) {
+                document.getElementById('status').innerText = 'Ошибка подключения: ' + (err.message || 'Неизвестно');
+                console.error(err);
+            }
+        });
+
+        // Отправка TON
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const amtStr = document.getElementById('amount').value.trim();
+            const amountTon = parseFloat(amtStr);
+
+            if (isNaN(amountTon) || amountTon < 0.001) {
+                document.getElementById('status').innerText = 'Введите сумму ≥ 0.001 TON';
                 return;
             }
 
-            // Конвертируем TON → nanoTON (1 TON = 1_000_000_000 nanoTON)
-            const nanoAmount = Math.floor(amountTon * 1_000_000_000).toString();
+            const nanoTon = Math.floor(amountTon * 1_000_000_000).toString();
 
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600, // 10 минут на подтверждение
+            const tx = {
+                validUntil: Math.floor(Date.now() / 1000) + 600,
                 messages: [{
-                    address: RECEIVER_ADDRESS,
-                    amount: nanoAmount
-                    // payload: btoa('Донат от ' + (user?.username || 'аноним')) // опционально
+                    address: RECEIVER,
+                    amount: nanoTon
                 }]
             };
 
             document.getElementById('status').innerText = `Отправка ${amountTon} TON... Подтверди в кошельке`;
 
             try {
-                const result = await tonConnectUI.sendTransaction(transaction, {
-                    // Улучшает поведение в мобильных кошельках
-                    modals: ['before', 'success', 'error'],
-                    notifications: ['before', 'success', 'error']
-                });
-                document.getElementById('status').innerText = `Успех! Транзакция отправлена. Хэш: ${result.boc.slice(0, 20)}...`;
-                console.log('Полный результат:', result);
-            } catch (error) {
-                document.getElementById('status').innerText = 'Ошибка: ' + (error.message || 'Неизвестная ошибка');
-                console.error('TON Connect ошибка:', error);
+                const result = await tonConnectUI.sendTransaction(tx);
+                document.getElementById('status').innerText = `Успех! Хэш: ${result.boc.slice(0, 16)}... Проверь в explorer.ton.org`;
+            } catch (err) {
+                document.getElementById('status').innerText = 'Ошибка: ' + (err.message || 'Транзакция отменена');
+                console.error('Send error:', err);
             }
         });
+
+        // Автоматическая проверка при загрузке
+        setTimeout(() => {
+            if (tonConnectUI.connected) {
+                document.getElementById('status').innerText = 'Кошелёк уже подключён (автоопределение)';
+                document.getElementById('connectBtn').innerText = 'Кошелёк подключён ✓';
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }, 1500);
     </script>
 </body>
 </html>
