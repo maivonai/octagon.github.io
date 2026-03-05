@@ -2,9 +2,52 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Тест</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой первый Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+            background: #f0f8ff;
+            margin: 0;
+        }
+        h1 { color: #0088cc; }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #userInfo { margin-top: 30px; font-size: 20px; color: #333; }
+    </style>
 </head>
 <body>
-    <h1>Это работает!</h1>
+    <h1>Привет из Telegram Mini App!</h1>
+    <p>Это работает внутри Telegram.</p>
+    <button id="showUser">Показать моё имя</button>
+    <div id="userInfo"></div>
+
+    <script>
+        // Инициализация Mini App
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand(); // Делает полноэкранным
+
+        // Кнопка показывает имя пользователя из Telegram
+        document.getElementById('showUser').addEventListener('click', function() {
+            const user = Telegram.WebApp.initDataUnsafe.user;
+            if (user) {
+                document.getElementById('userInfo').innerText = 
+                    'Привет, ' + (user.first_name || 'друг') + '! 😊';
+            } else {
+                document.getElementById('userInfo').innerText = 'Не удалось получить данные пользователя.';
+            }
+        });
+    </script>
 </body>
 </html>
