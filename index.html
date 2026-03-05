@@ -3,51 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой первый Mini App</title>
+    <title>Octagon Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 40px;
-            background: #f0f8ff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        h1 { color: #0088cc; }
+        header {
+            width: 100%;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .user {
+            font-size: 1.3em;
+            margin: 10px 0;
+        }
+        .container {
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .card img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
         button {
-            padding: 12px 24px;
-            font-size: 18px;
-            background: #0088cc;
+            background: #00c853;
             color: white;
             border: none;
-            border-radius: 8px;
+            padding: 14px 28px;
+            font-size: 1.1em;
+            border-radius: 50px;
             cursor: pointer;
-            margin-top: 20px;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,200,83,0.4);
         }
-        #userInfo { margin-top: 30px; font-size: 20px; color: #333; }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,200,83,0.6);
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #ffeb3b;
+        }
     </style>
 </head>
 <body>
-    <h1>Привет из Telegram Mini App!</h1>
-    <p>Это работает внутри Telegram.</p>
-    <button id="showUser">Показать моё имя</button>
-    <div id="userInfo"></div>
+    <header>
+        <h1>Octagon Shop</h1>
+        <div class="user" id="userInfo">Загрузка...</div>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop" alt="Премиум доступ">
+            <h2>Премиум доступ</h2>
+            <p>Получи эксклюзивный контент за 50 Stars</p>
+            <button onclick="buyWithStars(50, 'premium_access')">Купить за 50 ⭐</button>
+        </div>
+
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop" alt="TON кошелёк">
+            <h2>TON Gift</h2>
+            <p>Отправь подарок в TON (0.5 TON)</p>
+            <button onclick="connectTON()">Подключить TON Wallet</button>
+            <button onclick="payWithTON()" id="tonPayBtn" disabled>Оплатить TON</button>
+        </div>
+    </div>
+
+    <div id="status"></div>
 
     <script>
-        // Инициализация Mini App
         Telegram.WebApp.ready();
-        Telegram.WebApp.expand(); // Делает полноэкранным
+        Telegram.WebApp.expand();
 
-        // Кнопка показывает имя пользователя из Telegram
-        document.getElementById('showUser').addEventListener('click', function() {
-            const user = Telegram.WebApp.initDataUnsafe.user;
-            if (user) {
-                document.getElementById('userInfo').innerText = 
-                    'Привет, ' + (user.first_name || 'друг') + '! 😊';
-            } else {
-                document.getElementById('userInfo').innerText = 'Не удалось получить данные пользователя.';
-            }
-        });
+        // Показываем имя пользователя
+        const user = Telegram.WebApp.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('userInfo').innerText = `Привет, ${user.first_name}!`;
+        } else {
+            document.getElementById('userInfo').innerText = 'Пользователь не найден';
+        }
+
+        // Функция покупки за Stars (Telegram Stars)
+        function buyWithStars(amount, item) {
+            Telegram.WebApp.openInvoice({
+                title: `Покупка: ${item}`,
+                description: `Оплата ${amount} Stars за цифровой товар`,
+                payload: `payload_${item}_${Date.now()}`, // уникальный payload для твоего бэкенда
+                provider_token: "", // для Stars оставляем пустым!
+                currency: "XTR",    // обязательно XTR для Stars
+                prices: [{ label: item, amount: amount * 100 }] // amount в копейках (1 Star = 100)
+            }, function(status) {
+                document.getElementById('status').innerText = status === 'paid' 
+                    ? 'Оплата прошла! Спасибо!' 
+                    : 'Оплата отменена или ошибка';
+            });
+        }
+
+        // TON Connect — подключаем кошелёк (пока заглушка, ниже объясню)
+        let tonConnected = false;
+        function connectTON() {
+            // Здесь нужен @tonconnect/ui или простой TON Connect
+            alert("Подключение TON Wallet... (реальная интеграция требует TON Connect SDK)");
+            // После успешного подключения:
+            tonConnected = true;
+            document.getElementById('tonPayBtn').disabled = false;
+            document.getElementById('status').innerText = 'TON Wallet подключён!';
+        }
+
+        function payWithTON() {
+            if (!tonConnected) return alert('Сначала подключи кошелёк!');
+            alert('Отправка транзакции в TON... (реальная оплата через TON Connect)');
+            // Здесь будет код отправки TON
+        }
     </script>
 </body>
 </html>
