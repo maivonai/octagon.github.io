@@ -3,240 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Octagon – TON Wallet Connect</title>
+    <title>Octagon – TON Connect</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@2.4.2/dist/tonconnect-ui.min.js"></script>
     <style>
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: system-ui, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px;
             min-height: 100vh;
+            background: linear-gradient(135deg, #4a148c, #1a237e, #311b92, #4a148c);
+            background-size: 300% 300%;
+            animation: gradientFlow 12s ease infinite;
+            color: #e0e0ff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            color: #e0e0e0;
-            background: linear-gradient(135deg, #4a148c, #1a237e, #4a148c);
-            background-size: 200% 200%;
-            animation: shimmer 8s ease-in-out infinite;
-            text-align: center;
         }
-        @keyframes shimmer {
+        @keyframes gradientFlow {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
         h1 {
-            font-size: 2.5em;
-            margin: 40px 0 20px;
-            color: #bb86fc;
-            text-shadow: 0 0 10px rgba(187, 134, 252, 0.6);
+            font-size: 2.4em;
+            margin: 30px 0 20px;
+            color: #d1c4e9;
+            text-shadow: 0 0 15px rgba(209, 196, 233, 0.5);
         }
         #userInfo {
             font-size: 1.4em;
-            margin-bottom: 30px;
-            color: #82b1ff;
+            margin-bottom: 25px;
+            color: #b39ddb;
         }
-        .button-group {
+        .controls {
+            width: 100%;
+            max-width: 380px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            width: 90%;
-            max-width: 360px;
+            gap: 16px;
+            margin-bottom: 30px;
         }
         button {
-            background: linear-gradient(45deg, #512da8, #303f9f);
-            color: white;
-            border: none;
             padding: 16px;
             font-size: 1.3em;
+            border: none;
             border-radius: 12px;
+            color: white;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(81, 45, 168, 0.4);
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(81, 45, 168, 0.6);
+        #connectBtn {
+            background: linear-gradient(45deg, #7e57c2, #5e35b1);
         }
-        button:disabled {
-            background: linear-gradient(45deg, #424242, #616161);
+        #connectBtn:disabled {
+            background: #616161;
             cursor: not-allowed;
-            box-shadow: none;
         }
         #disconnectBtn {
-            background: linear-gradient(45deg, #b71c1c, #d32f2f);
+            background: linear-gradient(45deg, #ef5350, #d32f2f);
         }
-        .amount-section {
-            background: rgba(255, 255, 255, 0.05);
+        #disconnectBtn:disabled {
+            background: #616161;
+            cursor: not-allowed;
+        }
+        .amount-box {
+            background: rgba(255,255,255,0.06);
             border-radius: 16px;
             padding: 20px;
-            margin: 20px 0;
-            width: 90%;
-            max-width: 360px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
         }
         input[type="number"] {
             width: 100%;
-            max-width: 200px;
-            padding: 12px;
-            font-size: 1.4em;
-            border-radius: 8px;
-            border: 1px solid #7e57c2;
-            background: #1a237e;
+            padding: 14px;
+            font-size: 1.5em;
+            border-radius: 10px;
+            border: 1px solid #9575cd;
+            background: #311b92;
             color: white;
             text-align: center;
             margin-bottom: 15px;
         }
         .presets {
             display: flex;
-            justify-content: center;
-            gap: 10px;
+            justify-content: space-around;
             flex-wrap: wrap;
+            gap: 10px;
         }
         .presets button {
             background: #512da8;
-            padding: 8px 16px;
+            padding: 10px 18px;
             font-size: 1em;
-            border-radius: 8px;
-            box-shadow: none;
         }
         #sendBtn {
-            background: linear-gradient(45deg, #388e3c, #66bb6a);
-            font-size: 1.5em;
-            padding: 18px;
-            margin-top: 20px;
+            background: linear-gradient(45deg, #66bb6a, #43a047);
+            font-size: 1.6em;
+            padding: 20px;
+        }
+        #sendBtn:disabled {
+            background: #616161;
+            cursor: not-allowed;
         }
         #status {
-            font-size: 1.2em;
-            margin: 20px 20px 40px;
-            color: #ffeb3b;
-            min-height: 60px;
+            font-size: 1.25em;
+            margin-top: 25px;
+            color: #fff176;
+            min-height: 70px;
             word-break: break-word;
         }
     </style>
 </head>
 <body>
-    <h1>Octagon TON Wallet</h1>
-    <div id="userInfo">Загрузка пользователя...</div>
+    <h1>Octagon TON</h1>
+    <div id="userInfo">Загрузка...</div>
 
-    <div class="button-group">
+    <div class="controls">
         <button id="connectBtn">Подключить кошелёк</button>
         <button id="disconnectBtn" disabled>Отключить кошелёк</button>
     </div>
 
-    <div class="amount-section">
-        <p>Сумма TON для отправки:</p>
+    <div class="amount-box">
+        <p>Сумма TON:</p>
         <input type="number" id="amount" value="0.1" min="0.001" step="0.001">
         <div class="presets">
-            <button onclick="setAmount(0.01)">0.01</button>
-            <button onclick="setAmount(0.05)">0.05</button>
-            <button onclick="setAmount(0.1)">0.1</button>
-            <button onclick="setAmount(0.5)">0.5</button>
+            <button onclick="document.getElementById('amount').value=0.01">0.01</button>
+            <button onclick="document.getElementById('amount').value=0.05">0.05</button>
+            <button onclick="document.getElementById('amount').value=0.1">0.1</button>
+            <button onclick="document.getElementById('amount').value=0.5">0.5</button>
         </div>
     </div>
 
     <button id="sendBtn" disabled>Отправить TON</button>
 
-    <div id="status">Нажми "Подключить кошелёк", чтобы начать</div>
+    <div id="status">Нажми «Подключить кошелёк»</div>
 
     <script>
-        if (window.Telegram?.WebApp) {
-            Telegram.WebApp.ready();
-            Telegram.WebApp.expand();
-        } else {
-            document.getElementById('status').innerText = 'Ошибка: Telegram Web App не обнаружен. Открой в Telegram.';
-        }
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
 
-        const user = Telegram.WebApp.initDataUnsafe?.user;
-        document.getElementById('userInfo').innerText = user 
-            ? `Привет, ${user.first_name || 'друг'}!` 
-            : 'Пользователь не определён';
+        const user = Telegram.WebApp.initDataUnsafe.user;
+        document.getElementById('userInfo').innerText = user ? `Привет, ${user.first_name}!` : 'Пользователь не найден';
 
-        const RECEIVER_ADDRESS = noir-et-rose.ton ; // ← Замени на свой реальный TON-адрес (EQ... или UQ...)
+        const RECEIVER_ADDRESS = 'UQDLUQwxUttwdqd4VBOpqAAHwzPH_O7QTCVhCceKuDyh-DKI';
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json',
             walletsListSource: 'https://raw.githubusercontent.com/ton-blockchain/wallets-list/main/wallets-v4.json',
-            twaReturnUrl: window.location.href.split('?')[0],
+            twaReturnUrl: window.location.href.split('?')[0]
         });
 
-        // Обновление статусов
         tonConnectUI.onStatusChange(wallet => {
-            const isConnected = !!wallet;
-            document.getElementById('connectBtn').innerText = isConnected ? 'Кошелёк подключён ✓' : 'Подключить кошелёк';
-            document.getElementById('connectBtn').disabled = isConnected;
-            document.getElementById('disconnectBtn').disabled = !isConnected;
-            document.getElementById('sendBtn').disabled = !isConnected;
-            document.getElementById('status').innerText = isConnected 
-                ? 'Готово к отправке. Выбери сумму и подтверди.' 
-                : 'Подключи кошелёк для продолжения';
+            const connected = !!wallet;
+            document.getElementById('connectBtn').innerText = connected ? 'Подключено ✓' : 'Подключить кошелёк';
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('sendBtn').disabled = !connected;
+            document.getElementById('status').innerText = connected 
+                ? 'Кошелёк готов. Выбери сумму и отправь.' 
+                : 'Подключи кошелёк для отправки TON';
         });
 
-        // Подключение
         document.getElementById('connectBtn').addEventListener('click', async () => {
             try {
-                document.getElementById('status').innerText = 'Подключение... Жди модалки с кошельками';
+                document.getElementById('status').innerText = 'Открываю список кошельков...';
                 await tonConnectUI.connectWallet();
             } catch (err) {
-                document.getElementById('status').innerText = 'Ошибка подключения: ' + (err.message || 'Проверь интернет/кошелёк');
+                document.getElementById('status').innerText = 'Ошибка: ' + (err.message || 'Попробуй снова');
                 console.error(err);
             }
         });
 
-        // Отключение
         document.getElementById('disconnectBtn').addEventListener('click', async () => {
             try {
-                document.getElementById('status').innerText = 'Отключение...';
                 await tonConnectUI.disconnect();
-                document.getElementById('status').innerText = 'Кошелёк отключён. Подключи заново для отправки.';
+                document.getElementById('status').innerText = 'Кошелёк отключён. Подключи заново.';
             } catch (err) {
-                document.getElementById('status').innerText = 'Ошибка отключения: ' + (err.message || 'Попробуй снова');
-                console.error(err);
+                document.getElementById('status').innerText = 'Ошибка отключения: ' + err.message;
             }
         });
 
-        // Установка суммы
-        function setAmount(value) {
-            document.getElementById('amount').value = value;
+        function setAmount(val) {
+            document.getElementById('amount').value = val;
         }
 
-        // Отправка
         document.getElementById('sendBtn').addEventListener('click', async () => {
-            const amountStr = document.getElementById('amount').value.trim();
-            const amountTon = parseFloat(amountStr);
-            if (isNaN(amountTon) || amountTon < 0.001) {
-                document.getElementById('status').innerText = 'Ошибка: Сумма минимум 0.001 TON и должна быть числом';
+            const amt = parseFloat(document.getElementById('amount').value);
+            if (isNaN(amt) || amt < 0.001) {
+                document.getElementById('status').innerText = 'Сумма минимум 0.001 TON';
                 return;
             }
-            const nanoAmount = Math.floor(amountTon * 1_000_000_000).toString();
-            const transaction = {
+            const nano = Math.floor(amt * 1e9).toString();
+            const tx = {
                 validUntil: Math.floor(Date.now() / 1000) + 600,
-                messages: [{
-                    address: RECEIVER_ADDRESS,
-                    amount: nanoAmount,
-                    payload: btoa('Донат от ' + (user?.first_name || 'анонима') + ' через Octagon') // Комментарий к транзакции
-                }]
-                // Для теста добавь: , network: 'testnet'
+                messages: [{ address: RECEIVER_ADDRESS, amount: nano }]
             };
-            document.getElementById('status').innerText = `Отправка ${amountTon} TON... Подтверди в кошельке (проверь адрес: ${RECEIVER_ADDRESS.slice(0, 6)}...${RECEIVER_ADDRESS.slice(-4)})`;
+            document.getElementById('status').innerText = `Отправляю ${amt} TON... Подтверди в кошельке`;
             try {
-                const result = await tonConnectUI.sendTransaction(transaction);
-                document.getElementById('status').innerText = `Успех! TON отправлены. Хэш: ${result.boc.slice(0, 16)}... Проверь в explorer.ton.org. Спасибо! 🎉`;
+                const res = await tonConnectUI.sendTransaction(tx);
+                document.getElementById('status').innerText = `Успех! Хэш: ${res.boc.slice(0,12)}... Проверь explorer.ton.org`;
             } catch (err) {
-                document.getElementById('status').innerText = 'Ошибка отправки: ' + (err.message || 'Транзакция отменена или ошибка сети. Попробуй отключить/подключить кошелёк');
-                console.error('Send error:', err);
+                document.getElementById('status').innerText = 'Ошибка: ' + (err.message || 'Отменено');
             }
         });
 
-        // Автопроверка подключения при загрузке
-        setTimeout(async () => {
-            try {
-                await tonConnectUI.restoreConnection();
-            } catch {}
-        }, 1000);
+        // Восстановление соединения при загрузке
+        setTimeout(() => tonConnectUI.restoreConnection().catch(() => {}), 800);
     </script>
 </body>
 </html>
-
