@@ -10,7 +10,7 @@
     <style>
         :root {
             --bg: #ffffff;
-            --accent: #3b82f6;          /* синий основной */
+            --accent: #3b82f6;
             --accent-light: #60a5fa;
             --text: #111827;
             --text-light: #6b7280;
@@ -43,12 +43,12 @@
         .logo {
             width: 42px;
             height: 42px;
-            border-radius: var(--radius-pill);
-            overflow: hidden;
-            flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.15);
+            transition: all 0.25s ease;
         }
-        .logo img { width: 100%; height: 100%; object-fit: cover; }
+        .logo:hover {
+            transform: scale(1.12);
+            filter: drop-shadow(0 4px 8px rgba(59,130,246,0.3));
+        }
         h1 {
             margin: 0;
             font-size: 1.55em;
@@ -148,7 +148,6 @@
             text-align: center;
         }
 
-        /* Bottom Nav */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -194,7 +193,9 @@
 <body>
     <header>
         <div class="logo">
-            <img src="https://thumbs.dreamstime.com/b/geometric-blue-core-octagon-symbol-clean-modern-vector-illustration-featuring-abstract-octagonal-shape-enclosing-422840365.jpg" alt="Octagon Logo">
+            <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="50,0 100,25 100,75 50,100 0,75 0,25" fill="#3b82f6" stroke="#60a5fa" stroke-width="4"/>
+            </svg>
         </div>
         <h1>Octagon</h1>
     </header>
@@ -222,7 +223,7 @@
         <div id="status">Подключи кошелёк чтобы продолжить</div>
     </div>
 
-    <!-- Профиль вкладка (скрыта по умолчанию) -->
+    <!-- Профиль -->
     <div class="main" id="profileContent" style="display:none; padding-top:16px;">
         <div class="card" style="text-align:center;">
             <img id="profileAvatar" class="profile-avatar" src="" alt="Аватар" style="margin:0 auto 12px; display:block;">
@@ -261,27 +262,22 @@
             preferredWallets: ['tonkeeper']
         });
 
-        // Обновление баланса
         function updateBalance() {
-            document.getElementById('status').innerText = '';
             document.getElementById('profileSpent').innerText = balance.toFixed(4);
         }
         updateBalance();
 
-        // Профиль
         function updateProfile() {
             const name = user.first_name || 'Гость';
-            const photo = user.photo_url || 'https://via.placeholder.com/64?text=' + name[0];
+            const photo = user.photo_url || 'https://via.placeholder.com/64?text=' + (name[0] || '?');
 
             document.getElementById('profileName').innerText = name;
             document.getElementById('profileAvatar').src = photo;
             document.getElementById('navAvatar').src = photo;
-
             document.getElementById('userInfo').innerHTML = `Привет, ${name}!`;
         }
         updateProfile();
 
-        // Подключение
         tonConnectUI.onStatusChange(wallet => {
             const connected = !!wallet;
             document.getElementById('connectBtn').innerText = connected ? 'Подключено ✓' : 'Подключить кошелёк';
@@ -325,7 +321,6 @@
                 localStorage.setItem(balanceKey, balance);
                 updateBalance();
 
-                // Конфетти
                 confetti({
                     particleCount: 120,
                     spread: 70,
@@ -339,7 +334,6 @@
             }
         };
 
-        // Навигация
         const homeBtn = document.getElementById('navHome');
         const profileBtn = document.getElementById('navProfile');
         const mainContent = document.getElementById('mainContent');
