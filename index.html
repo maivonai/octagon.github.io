@@ -1,413 +1,147 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="format-detection" content="telephone=no">
-    <title>Octagon</title>
+<script>
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    const user = Telegram.WebApp.initDataUnsafe.user || {};
+    const userId = user.id || 'anonymous';
+    const RECEIVER_ADDRESS = 'UQDLUQwxUttwdqd4VBOpqAAHwzPH_O7QTCVhCceKuDyh-DKI';
 
-    <style>
-        :root {
-            --bg: #ffffff;
-            --accent: #3b82f6;
-            --accent-light: #60a5fa;
-            --text: #111827;
-            --text-light: #6b7280;
-            --glass: rgba(255,255,255,0.85);
-            --border: #e5e7eb;
-            --radius-pill: 9999px;
-            --radius-large: 32px;
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json',
+        preferredWallets: ['tonkeeper']
+    });
 
-            --safe-top:    env(safe-area-inset-top,    0px);
-            --safe-right:  env(safe-area-inset-right,  0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-left:   env(safe-area-inset-left,   0px);
-        }
+    let balance = 0;
+    let storage = null;
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow-x: hidden;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            background: var(--bg);
-            touch-action: manipulation;
-        }
+    // Проверяем, поддерживается ли DeviceStorage
+    if (Telegram.WebApp.isVersionAtLeast?.('9.0') && Telegram.WebApp.DeviceStorage) {
+        storage = Telegram.WebApp.DeviceStorage;
+        console.log('DeviceStorage доступен');
+    } else {
+        console.log('DeviceStorage НЕ доступен (старая версия Telegram или ограничение)');
+    }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            padding-top: var(--safe-top);
-            padding-bottom: calc(var(--safe-bottom) + 4px);
-            padding-left: max(6px, var(--safe-left));
-            padding-right: max(6px, var(--safe-right));
-            box-sizing: border-box;
-            min-height: 100dvh;
-        }
-
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border);
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo {
-            width: 44px;
-            height: 44px;
-            transition: all 0.25s ease;
-        }
-        .logo:hover {
-            transform: scale(1.1);
-            filter: drop-shadow(0 4px 12px rgba(59,130,246,0.25));
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.55em;
-            font-weight: 700;
-            color: var(--accent);
-        }
-
-        .main {
-            flex: 1;
-            padding: 24px 16px;
-            max-width: 480px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .card {
-            background: white;
-            border-radius: var(--radius-large);
-            border: 1px solid var(--border);
-            padding: 28px 20px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-            transition: all 0.28s ease;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 16px;
-            font-size: 1.18em;
-            font-weight: 600;
-            border: none;
-            border-radius: var(--radius-pill);
-            cursor: pointer;
-            transition: all 0.25s ease;
-            margin: 12px 0;
-            box-sizing: border-box;
-        }
-
-        #connectBtn { background: var(--accent); color: white; }
-        #connectBtn:hover { background: #2563eb; transform: scale(1.02); }
-        #connectBtn:disabled { background: #d1d5db; cursor: not-allowed; }
-
-        #disconnectBtn { background: #ef4444; color: white; }
-        #disconnectBtn:hover { background: #dc2626; transform: scale(1.02); }
-        #disconnectBtn:disabled { background: #d1d5db; cursor: not-allowed; }
-
-        #sendBtn {
-            background: linear-gradient(90deg, #3b82f6, #60a5fa);
-            color: white;
-            font-size: 1.32em;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(59,130,246,0.25);
-        }
-        #sendBtn:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(59,130,246,0.35); }
-        #sendBtn:disabled { background: #d1d5db; cursor: not-allowed; box-shadow: none; }
-
-        input[type="number"] {
-            width: 100%;
-            padding: 16px;
-            font-size: 1.4em;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-pill);
-            text-align: center;
-            margin: 16px 0;
-            background: #f9fafb;
-            box-sizing: border-box;
-        }
-
-        .presets {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 16px 0;
-        }
-
-        .presets button {
-            padding: 10px 20px;
-            font-size: 1em;
-            background: #eff6ff;
-            color: var(--accent);
-            border: 1px solid #bfdbfe;
-            border-radius: var(--radius-pill);
-        }
-
-        #status {
-            text-align: center;
-            margin: 20px 0;
-            font-size: 1.15em;
-            color: var(--text-light);
-            min-height: 60px;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid var(--border);
-            display: flex;
-            height: 68px;
-            padding-bottom: var(--safe-bottom);
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
-            box-sizing: border-box;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-light);
-            font-size: 0.82em;
-            transition: color 0.2s;
-        }
-
-        .nav-item.active { color: var(--accent); }
-
-        .nav-item svg, .nav-item img {
-            width: 28px;
-            height: 28px;
-            margin-bottom: 4px;
-        }
-
-        .profile-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--accent-light);
-        }
-
-        *, *::before, *::after {
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-
-        #mainContent, #profileContent {
-            overflow-x: hidden;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="logo">
-            <svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="100,10 190,60 190,140 100,190 10,140 10,60" fill="#3b82f6"/>
-            </svg>
-        </div>
-        <h1>Octagon</h1>
-    </header>
-
-    <div class="main" id="mainContent">
-        <div class="card">
-            <div id="userInfo">Загрузка...</div>
-            <button id="connectBtn">Подключить кошелёк</button>
-            <button id="disconnectBtn" disabled>Отключить кошелёк</button>
-            <p style="text-align:center; margin:20px 0 8px; color:var(--text-light);">Сумма в TON</p>
-            <input type="number" id="amount" value="0.1" min="0.001" step="0.001">
-            <div class="presets">
-                <button onclick="setAmount(0.01)">0.01</button>
-                <button onclick="setAmount(0.05)">0.05</button>
-                <button onclick="setAmount(0.1)">0.1</button>
-                <button onclick="setAmount(0.5)">0.5</button>
-            </div>
-            <button id="sendBtn" disabled>Отправить TON</button>
-        </div>
-        <div id="status">Подключи кошелёк чтобы продолжить</div>
-    </div>
-
-    <div class="main" id="profileContent" style="display:none; padding-top:16px;">
-        <div class="card" style="text-align:center;">
-            <img id="profileAvatar" class="profile-avatar" src="" alt="Аватар" style="margin:0 auto 12px; display:block;">
-            <div id="profileName" style="font-size:1.4em; font-weight:600; margin-bottom:8px;"></div>
-            <div style="color:var(--text-light); margin-bottom:20px;">Отправлено в Octagon</div>
-            <div id="profileSpent" style="font-size:2.2em; font-weight:700; color:var(--accent);"></div>
-            <div style="color:var(--text-light); font-size:1.1em;">TON</div>
-        </div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active" id="navHome">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
-            Главная
-        </div>
-        <div class="nav-item" id="navProfile">
-            <img id="navAvatar" src="" alt="Аватар" style="border-radius:50%; object-fit:cover;">
-            Профиль
-        </div>
-    </div>
-
-    <script>
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-
-        const user = Telegram.WebApp.initDataUnsafe.user || {};
-        const userId = user.id || 'anonymous';
-        const RECEIVER_ADDRESS = 'UQDLUQwxUttwdqd4VBOpqAAHwzPH_O7QTCVhCceKuDyh-DKI';
-
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json',
-            preferredWallets: ['tonkeeper']
-        });
-
-        let balance = 0;
-        let storage = null;
-
-        // Проверяем наличие DeviceStorage (Bot API 9.0+)
-        if (Telegram.WebApp.isVersionAtLeast?.('9.0') && Telegram.WebApp.DeviceStorage) {
-            storage = Telegram.WebApp.DeviceStorage;
-        }
-
-        async function loadBalance() {
-            if (storage) {
-                try {
-                    const saved = await storage.getItem(`ton_sent_${userId}`);
-                    balance = saved ? parseFloat(saved) : 0;
-                } catch (e) {
-                    console.warn('DeviceStorage get failed:', e);
-                    balance = 0;
-                }
-            } else {
-                balance = 0; // fallback — сбрасывается при перезапуске
-            }
-            updateBalance();
-        }
-
-        async function saveBalance() {
-            if (storage) {
-                try {
-                    await storage.setItem(`ton_sent_${userId}`, balance.toString());
-                } catch (e) {
-                    console.warn('DeviceStorage set failed:', e);
-                }
-            }
-            // если storage нет — ничего не сохраняем (баланс в памяти)
-        }
-
-        function updateBalance() {
-            document.getElementById('profileSpent').innerText = balance.toFixed(4);
-        }
-
-        function updateProfile() {
-            const name = user.first_name || 'Гость';
-            const photo = user.photo_url || 'https://via.placeholder.com/64?text=' + (name[0] || '?');
-            document.getElementById('profileName').innerText = name;
-            document.getElementById('profileAvatar').src = photo;
-            document.getElementById('navAvatar').src = photo;
-            document.getElementById('userInfo').innerHTML = `Привет, ${name}!`;
-        }
-        updateProfile();
-
-        tonConnectUI.onStatusChange(wallet => {
-            const connected = !!wallet;
-            document.getElementById('connectBtn').innerText = connected ? 'Подключено ✓' : 'Подключить кошелёк';
-            document.getElementById('connectBtn').disabled = connected;
-            document.getElementById('disconnectBtn').disabled = !connected;
-            document.getElementById('sendBtn').disabled = !connected;
-            document.getElementById('status').innerText = connected
-                ? 'Готово к отправке TON'
-                : 'Подключи кошелёк';
-        });
-
-        document.getElementById('connectBtn').onclick = async () => {
-            try { await tonConnectUI.connectWallet(); } catch(e) {}
-        };
-
-        document.getElementById('disconnectBtn').onclick = async () => {
-            try { await tonConnectUI.disconnect(); } catch(e) {}
-        };
-
-        function setAmount(val) {
-            document.getElementById('amount').value = val;
-        }
-
-        document.getElementById('sendBtn').onclick = async () => {
-            const amt = parseFloat(document.getElementById('amount').value);
-            if (isNaN(amt) || amt < 0.001) {
-                document.getElementById('status').innerText = 'Минимум 0.001 TON';
-                return;
-            }
-            const nano = Math.floor(amt * 1e9).toString();
-            const tx = {
-                validUntil: Math.floor(Date.now() / 1000) + 600,
-                messages: [{ address: RECEIVER_ADDRESS, amount: nano }]
-            };
+    async function loadBalance() {
+        if (storage) {
             try {
-                await tonConnectUI.sendTransaction(tx);
-                balance += amt;
-                await saveBalance();
-                updateBalance();
-                confetti({
-                    particleCount: 120,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#3b82f6', '#60a5fa', '#1e40af', '#93c5fd']
-                });
-                document.getElementById('status').innerText = `Отправлено ${amt.toFixed(3)} TON!`;
-            } catch (err) {
-                document.getElementById('status').innerText = 'Отправка отменена';
+                const saved = await storage.getItem(`ton_sent_${userId}`);
+                const parsed = saved ? parseFloat(saved) : 0;
+                balance = isNaN(parsed) ? 0 : parsed;
+                console.log('Загружен баланс из хранилища:', balance);
+            } catch (e) {
+                console.error('Ошибка загрузки из DeviceStorage:', e);
+                balance = 0;
             }
+        } else {
+            balance = 0;
+        }
+        updateBalance();
+    }
+
+    async function saveBalance() {
+        if (storage) {
+            try {
+                await storage.setItem(`ton_sent_${userId}`, balance.toString());
+                console.log('Баланс сохранён:', balance);
+            } catch (e) {
+                console.error('Ошибка сохранения в DeviceStorage:', e);
+            }
+        } else {
+            console.log('Сохранение не выполнено — хранилище недоступно');
+        }
+    }
+
+    function updateBalance() {
+        if (typeof balance !== 'number' || isNaN(balance)) {
+            balance = 0;
+            console.warn('Balance был NaN → сбросили в 0');
+        }
+        document.getElementById('profileSpent').innerText = balance.toFixed(4);
+    }
+
+    function updateProfile() {
+        const name = user.first_name || 'Гость';
+        const photo = user.photo_url || 'https://via.placeholder.com/64?text=' + (name[0] || '?');
+        document.getElementById('profileName').innerText = name;
+        document.getElementById('profileAvatar').src = photo;
+        document.getElementById('navAvatar').src = photo;
+        document.getElementById('userInfo').innerHTML = `Привет, ${name}!`;
+    }
+    updateProfile();
+
+    tonConnectUI.onStatusChange(wallet => {
+        const connected = !!wallet;
+        document.getElementById('connectBtn').innerText = connected ? 'Подключено ✓' : 'Подключить кошелёк';
+        document.getElementById('connectBtn').disabled = connected;
+        document.getElementById('disconnectBtn').disabled = !connected;
+        document.getElementById('sendBtn').disabled = !connected;
+        document.getElementById('status').innerText = connected
+            ? 'Готово к отправке TON'
+            : 'Подключи кошелёк';
+    });
+
+    document.getElementById('connectBtn').onclick = async () => {
+        try { await tonConnectUI.connectWallet(); } catch(e) {}
+    };
+
+    document.getElementById('disconnectBtn').onclick = async () => {
+        try { await tonConnectUI.disconnect(); } catch(e) {}
+    };
+
+    function setAmount(val) {
+        document.getElementById('amount').value = val;
+    }
+
+    document.getElementById('sendBtn').onclick = async () => {
+        const amt = parseFloat(document.getElementById('amount').value);
+        if (isNaN(amt) || amt < 0.001) {
+            document.getElementById('status').innerText = 'Минимум 0.001 TON';
+            return;
+        }
+        const nano = Math.floor(amt * 1e9).toString();
+        const tx = {
+            validUntil: Math.floor(Date.now() / 1000) + 600,
+            messages: [{ address: RECEIVER_ADDRESS, amount: nano }]
         };
+        try {
+            await tonConnectUI.sendTransaction(tx);
+            balance += amt;
+            await saveBalance();
+            updateBalance();
+            confetti({
+                particleCount: 120,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#3b82f6', '#60a5fa', '#1e40af', '#93c5fd']
+            });
+            document.getElementById('status').innerText = `Отправлено ${amt.toFixed(3)} TON! Баланс: ${balance.toFixed(4)} TON`;
+        } catch (err) {
+            document.getElementById('status').innerText = 'Отправка отменена';
+            console.error('TX error:', err);
+        }
+    };
 
-        const homeBtn = document.getElementById('navHome');
-        const profileBtn = document.getElementById('navProfile');
-        const mainContent = document.getElementById('mainContent');
-        const profileContent = document.getElementById('profileContent');
+    const homeBtn = document.getElementById('navHome');
+    const profileBtn = document.getElementById('navProfile');
+    const mainContent = document.getElementById('mainContent');
+    const profileContent = document.getElementById('profileContent');
 
-        homeBtn.onclick = () => {
-            homeBtn.classList.add('active');
-            profileBtn.classList.remove('active');
-            mainContent.style.display = 'block';
-            profileContent.style.display = 'none';
-        };
+    homeBtn.onclick = () => {
+        homeBtn.classList.add('active');
+        profileBtn.classList.remove('active');
+        mainContent.style.display = 'block';
+        profileContent.style.display = 'none';
+    };
 
-        profileBtn.onclick = () => {
-            homeBtn.classList.remove('active');
-            profileBtn.classList.add('active');
-            mainContent.style.display = 'none';
-            profileContent.style.display = 'block';
-        };
+    profileBtn.onclick = () => {
+        homeBtn.classList.remove('active');
+        profileBtn.classList.add('active');
+        mainContent.style.display = 'none';
+        profileContent.style.display = 'block';
+    };
 
-        // Загружаем баланс при старте
-        loadBalance();
-
-        setTimeout(() => tonConnectUI.restoreConnection().catch(() => {}), 800);
-    </script>
-</body>
-</html>
+    // Запуск
+    loadBalance();
+    setTimeout(() => tonConnectUI.restoreConnection().catch(() => {}), 800);
+</script>
