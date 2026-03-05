@@ -3,146 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Octagon Mini App</title>
+    <title>Octagon Shop – Stars & TON</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script> <!-- TON Connect SDK -->
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        header {
-            width: 100%;
-            padding: 20px;
-            background: rgba(0,0,0,0.3);
-            text-align: center;
-        }
-        h1 {
-            margin: 0;
-            font-size: 2.2em;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-        .user {
-            font-size: 1.3em;
-            margin: 10px 0;
-        }
-        .container {
-            padding: 20px;
-            width: 90%;
-            max-width: 400px;
-        }
-        .card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px 0;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-        .card img {
-            width: 100%;
-            border-radius: 12px;
-            margin-bottom: 15px;
-        }
-        button {
-            background: #00c853;
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            font-size: 1.1em;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,200,83,0.4);
-        }
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,200,83,0.6);
-        }
-        #status {
-            margin-top: 20px;
-            font-size: 1.1em;
-            color: #ffeb3b;
-        }
+        /* Твой предыдущий стиль остаётся, или добавь новый */
+        body { font-family: Arial; background: #0f2027; color: white; text-align: center; padding: 20px; }
+        button { background: #00c853; color: white; padding: 15px; margin: 10px; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        button:disabled { background: gray; }
+        #status { margin-top: 20px; color: #ffeb3b; font-size: 20px; }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Octagon Shop</h1>
-        <div class="user" id="userInfo">Загрузка...</div>
-    </header>
+    <h1>Octagon Shop с TON</h1>
+    <div id="userInfo">Загрузка...</div>
 
-    <div class="container">
-        <div class="card">
-            <img src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop" alt="Премиум доступ">
-            <h2>Премиум доступ</h2>
-            <p>Получи эксклюзивный контент за 50 Stars</p>
-            <button onclick="buyWithStars(50, 'premium_access')">Купить за 50 ⭐</button>
-        </div>
+    <!-- Кнопка подключения TON-кошелька -->
+    <button id="connectTonBtn">Подключить TON Wallet (Tonkeeper)</button>
 
-        <div class="card">
-            <img src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop" alt="TON кошелёк">
-            <h2>TON Gift</h2>
-            <p>Отправь подарок в TON (0.5 TON)</p>
-            <button onclick="connectTON()">Подключить TON Wallet</button>
-            <button onclick="payWithTON()" id="tonPayBtn" disabled>Оплатить TON</button>
-        </div>
-    </div>
+    <!-- Кнопка отправки TON -->
+    <button id="sendTonBtn" disabled>Отправить 0.1 TON мне</button>
 
-    <div id="status"></div>
+    <div id="status">Нажми "Подключить", чтобы начать</div>
 
     <script>
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
 
-        // Показываем имя пользователя
+        // Показ имени пользователя
         const user = Telegram.WebApp.initDataUnsafe.user;
-        if (user) {
-            document.getElementById('userInfo').innerText = `Привет, ${user.first_name}!`;
-        } else {
-            document.getElementById('userInfo').innerText = 'Пользователь не найден';
-        }
+        document.getElementById('userInfo').innerText = user ? `Привет, ${user.first_name}!` : 'Пользователь не найден';
 
-        // Функция покупки за Stars (Telegram Stars)
-        function buyWithStars(amount, item) {
-            Telegram.WebApp.openInvoice({
-                title: `Покупка: ${item}`,
-                description: `Оплата ${amount} Stars за цифровой товар`,
-                payload: `payload_${item}_${Date.now()}`, // уникальный payload для твоего бэкенда
-                provider_token: "", // для Stars оставляем пустым!
-                currency: "XTR",    // обязательно XTR для Stars
-                prices: [{ label: item, amount: amount * 100 }] // amount в копейках (1 Star = 100)
-            }, function(status) {
-                document.getElementById('status').innerText = status === 'paid' 
-                    ? 'Оплата прошла! Спасибо!' 
-                    : 'Оплата отменена или ошибка';
-            });
-        }
+        // Инициализация TON Connect
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://maivonai.github.io/octagon.github.io/tonconnect-manifest.json', // Твой manifest
+            buttonRootId: 'connectTonBtn' // Автоматически меняет кнопку на "Connected" после подключения
+        });
 
-        // TON Connect — подключаем кошелёк (пока заглушка, ниже объясню)
-        let tonConnected = false;
-        function connectTON() {
-            // Здесь нужен @tonconnect/ui или простой TON Connect
-            alert("Подключение TON Wallet... (реальная интеграция требует TON Connect SDK)");
-            // После успешного подключения:
-            tonConnected = true;
-            document.getElementById('tonPayBtn').disabled = false;
-            document.getElementById('status').innerText = 'TON Wallet подключён!';
-        }
+        // Кнопка отправки TON (замени MY_TON_ADDRESS на свой реальный адрес)
+        const MY_TON_ADDRESS = 'EQCd56VPexb2uPpoD0u25WPIi5vP1H4tnC4f8d7b1o2cT2cS'; // ТВОЙ АДРЕС ЗДЕСЬ!!!
+        document.getElementById('sendTonBtn').addEventListener('click', async () => {
+            try {
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 300, // 5 минут на подтверждение
+                    messages: [
+                        {
+                            address: MY_TON_ADDRESS, // Адрес получателя (твой кошелёк)
+                            amount: '100000000' // 0.1 TON в nanoTON (1 TON = 1000000000 nanoTON)
+                        }
+                    ]
+                };
+                const result = await tonConnectUI.sendTransaction(transaction);
+                document.getElementById('status').innerText = 'Транзакция отправлена! Хэш: ' + result.boc;
+            } catch (error) {
+                document.getElementById('status').innerText = 'Ошибка: ' + error.message;
+                console.error(error);
+            }
+        });
 
-        function payWithTON() {
-            if (!tonConnected) return alert('Сначала подключи кошелёк!');
-            alert('Отправка транзакции в TON... (реальная оплата через TON Connect)');
-            // Здесь будет код отправки TON
-        }
+        // Включаем кнопку отправки после подключения
+        tonConnectUI.on('walletConnected', () => {
+            document.getElementById('sendTonBtn').disabled = false;
+            document.getElementById('status').innerText = 'Кошелёк подключён! Теперь можно отправить TON.';
+        });
     </script>
 </body>
 </html>
